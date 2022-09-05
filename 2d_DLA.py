@@ -77,15 +77,13 @@ def drawCircle(pos, color, tortoise):
 #############################
 
 
-def initialize(grid, tortoise):
+def initialize(grid):
 
     r = int(Rows/2 )
     c = int(Columns/2 )
 
     grid[r][c] = FILLED
     
-    drawCircle((r,c), 'blue', tortoise)
-
     emptyList = []
     
     for row in range(Rows):
@@ -268,52 +266,28 @@ def distance(pos):
     return dist
 
 def rPlusOne(emptyList, radius):
-
     newEmptyList = []
 
     for item in emptyList:
         if distance(item) == (radius + 1):
             newEmptyList.append(item)
 
-
     return newEmptyList
 
    
-def DLA(rows, columns, moveLimit, tortoise, radius, particles, bVisualize):
-
-    #radius starts at 0
-    
+def DLA(rows, columns, moveLimit, radius, particles):
     grid = emptyGrid(rows, columns)
-    if bVisualize:
-        drawGrid(rows, columns, tortoise)
-    
-    emptyList = initialize(grid, tortoise)
-
-
-##    newEmptyList = rPlusOne(emptyList, radius)
-
-
+    emptyList = initialize(grid)
     numParts = particles
     
     while numParts > 0:
-
         newEmptyList = rPlusOne(emptyList, radius)
-
         newGrid = copy.deepcopy(grid)
-
         ELIST = copy.deepcopy(emptyList)
-        
-
         #########################################
-        
         startR, startC = random.choice(newEmptyList)
-
         #########################################
-
-        
         newGrid[startR][startC] = FILLED
-        if bVisualize:
-            drawCircle((startR, startC), 'blue', tortoise)
 
         R = startR
         C = startC
@@ -323,22 +297,16 @@ def DLA(rows, columns, moveLimit, tortoise, radius, particles, bVisualize):
         ZZZ = 0
   
         while not stuck and counter < moveLimit:
-   
             newR, newC = randomMovement((R, C))
             
             newGrid[R][C] = EMPTY
-            if bVisualize:
-                drawCircle((R,C), 'white', tortoise)
             
             newGrid[newR][newC] = FILLED
-            if bVisualize:
-                drawCircle((newR, newC), 'blue', tortoise)
 
             count = neighborhood(grid, newR, newC)
             b = False
                 
             if count > 0:
-                
                 stuck = True
 
                 if (newR, newC) not in ELIST:
@@ -346,11 +314,12 @@ def DLA(rows, columns, moveLimit, tortoise, radius, particles, bVisualize):
                 else:
                     ELIST.remove((newR, newC))
                     ELIST.append((R, C))                
-                    if distance((newR, newC)) > radius and ZZZ % 2 == 0:
+                    if distance((newR, newC)) > radius and ZZZ % 2 == 0 and radius + 1 < Rows // 2:
                         radius = radius + 1
                         ZZZ += 1
                         
                     numParts = numParts - 1
+                    print("Particle stuck. Radius is %s. Particles remaining = %s"%(radius, numParts))
                     
             R = newR
             C = newC
@@ -361,8 +330,6 @@ def DLA(rows, columns, moveLimit, tortoise, radius, particles, bVisualize):
 
         if not stuck:
             newGrid[R][C] = EMPTY
-            if bVisualize:
-                drawCircle((R,C), 'white', tortoise)
             ELIST.append((R, C))
 
         grid = newGrid
@@ -370,7 +337,7 @@ def DLA(rows, columns, moveLimit, tortoise, radius, particles, bVisualize):
     return grid
 
 def fillGrid(tortoise, grid):
-    
+    drawGrid(Rows, Columns, tortoise)
     for r in range(len(grid)):
         row = grid[r]
         for c in range(len(row)):
@@ -380,9 +347,14 @@ def fillGrid(tortoise, grid):
                 drawCircle((r,c), 'blue', tortoise)
             else:
                 drawCircle((r,c), 'white', tortoise)
-        
     
 def main():
+    moveLimit = 100
+    numParticles = int(input("How many particles would you like for the simulation?: ").strip())
+
+    print("---- Starting DLA simulation with %s particles ----"%(numParticles))
+    grid = DLA(Rows, Columns, moveLimit, 0, numParticles)
+    print("---- DLA simulation completed... Drawing grid ----")
 
     george = turtle.Turtle()
     screen = george.getscreen()
@@ -392,12 +364,6 @@ def main():
     george.hideturtle()
     createCircles(screen, ['blue', 'white'])
 
-    moveLimit = 100
-    numParticles = 500
-    print("---- About to start DLA simulation ----")
-    grid = DLA(Rows, Columns, moveLimit, george, 0, numParticles, False)
-
-    print("---- DLA simulation completed... Drawing grid ----")
     fillGrid(george, grid)
 
     screen.update()
