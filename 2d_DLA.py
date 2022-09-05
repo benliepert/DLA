@@ -84,12 +84,14 @@ def initialize(grid):
 
     grid[r][c] = FILLED
     
-    emptyList = []
+    # emptyList = []
+    emptyList = {}
     
     for row in range(Rows):
         for col in range(Columns):
             if (row, col) != (r,c):
-                emptyList.append((row, col))
+                # emptyList.append((row, col))
+                emptyList[(row, col)] = True
 
     return emptyList
 
@@ -266,11 +268,13 @@ def distance(pos):
     return dist
 
 def rPlusOne(emptyList, radius):
-    newEmptyList = []
+    # newEmptyList = []
+    newEmptyList = {}
 
     for item in emptyList:
         if distance(item) == (radius + 1):
-            newEmptyList.append(item)
+            # newEmptyList.append(item)
+            newEmptyList[item] = True
 
     return newEmptyList
 
@@ -283,9 +287,11 @@ def DLA(rows, columns, moveLimit, radius, particles):
     while numParts > 0:
         newEmptyList = rPlusOne(emptyList, radius)
         newGrid = copy.deepcopy(grid)
-        ELIST = copy.deepcopy(emptyList)
+        # ELIST = copy.deepcopy(emptyList)
+        ELIST = emptyList #copy.deepcopy(emptyList)
         #########################################
-        startR, startC = random.choice(newEmptyList)
+        startR, startC = random.choice(list(newEmptyList.keys()))
+        print("Random point spawned at (%s, %s)"%(startR, startC))
         #########################################
         newGrid[startR][startC] = FILLED
 
@@ -309,11 +315,13 @@ def DLA(rows, columns, moveLimit, radius, particles):
             if count > 0:
                 stuck = True
 
-                if (newR, newC) not in ELIST:
+                if (newR, newC) not in list(ELIST.keys()):
                     break
                 else:
-                    ELIST.remove((newR, newC))
-                    ELIST.append((R, C))                
+                    #ELIST.remove((newR, newC))
+                    del ELIST[(newR, newC)]
+                    #ELIST.append((R, C))                
+                    ELIST[(R, C)] = True
                     if distance((newR, newC)) > radius and ZZZ % 2 == 0 and radius + 1 < Rows // 2:
                         radius = radius + 1
                         ZZZ += 1
@@ -330,19 +338,17 @@ def DLA(rows, columns, moveLimit, radius, particles):
 
         if not stuck:
             newGrid[R][C] = EMPTY
-            ELIST.append((R, C))
+            ELIST[(R, C)] = True
 
         grid = newGrid
         
     return grid
 
 def fillGrid(tortoise, grid):
-    drawGrid(Rows, Columns, tortoise)
     for r in range(len(grid)):
         row = grid[r]
         for c in range(len(row)):
             square = row[c]
-
             if square == FILLED:
                 drawCircle((r,c), 'blue', tortoise)
             else:
@@ -364,6 +370,7 @@ def main():
     george.hideturtle()
     createCircles(screen, ['blue', 'white'])
 
+    drawGrid(Rows, Columns, george)
     fillGrid(george, grid)
 
     screen.update()
