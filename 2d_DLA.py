@@ -264,6 +264,12 @@ def DLA(rows, columns, moveLimit, radius, particles):
     numUnstuck = 1
     partsToIncreaseRadius = 5
     movesToStickList = [] #TODO: graph this at the end
+    tempCounter = 0
+
+    # so our logging is there right away, even if it takes a sec to see particles
+    sys.stdout.write("Particles remaining = %d      \r"%(numParts))
+    sys.stdout.flush()
+
     while numParts > 0:
         newGrid = copy.deepcopy(grid)
         ELIST = empty
@@ -278,6 +284,12 @@ def DLA(rows, columns, moveLimit, radius, particles):
   
         while not stuck and counter < moveLimit:
             newR, newC = randomMovement((R, C))
+            # it's possible that random movement tells us to move to a squat that isn't empty
+            # loop until we've got a square that is
+            while (newR, newC) not in ELIST:
+                newR, newC = randomMovement((R, C))
+                tempCounter += 1
+
             newGrid[R][C] = EMPTY # the particle used to be at this spot
             newGrid[newR][newC] = FILLED # the particle moved to this spot
 
@@ -286,17 +298,14 @@ def DLA(rows, columns, moveLimit, radius, particles):
             if numNeighbors > 0:
                 stuck = True
 
-                if (newR, newC) not in list(ELIST.keys()):
-                    break
-                else:
-                    del ELIST[(newR, newC)]
-                    ELIST[(R, C)] = True
-                    numParts -= 1 
+                del ELIST[(newR, newC)]
+                ELIST[(R, C)] = True
+                numParts -= 1 
 
-                    movesToStickList.append(counter)
+                movesToStickList.append(counter)
 
-                    sys.stdout.write("Particles remaining = %d      \r"%(numParts))
-                    sys.stdout.flush()
+                sys.stdout.write("Particles remaining = %d      \r"%(numParts))
+                sys.stdout.flush()
                     
             R, C = newR, newC # new point becomes the current point
             grid = newGrid
@@ -311,6 +320,7 @@ def DLA(rows, columns, moveLimit, radius, particles):
 
         grid = newGrid
         
+    print("\n\nTempCounter = %d"%(tempCounter))
     return grid
 
 def fillGrid(tortoise, grid):
