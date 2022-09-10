@@ -396,7 +396,7 @@ def main():
         print("Writing grid out to file: %s"%(outFile))
         writeToFile(grid, outFile)
 
-    scale = 8 #int(input("Screen scale?: "))
+    scale = 8
     george = turtle.Turtle()
     screen = george.getscreen()
     screen.setup(Columns * scale + 20, Rows * scale + 20) # page 707
