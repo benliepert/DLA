@@ -1,15 +1,17 @@
+#!/bin/python3
 import turtle ## for drawing
 import random ## for random walk
 import math ## distance formula (square root)
 import copy ##copying lists so they won't be bound together
 import time
 import sys
+import argparse
 
 EMPTY = 0
 FILLED = 1
 
-Rows = 200
-Columns = 200
+#Rows = 200
+#Columns = 200
 
 
 ## currently all circle related functions draw squares instead
@@ -71,17 +73,23 @@ def drawCircle(pos, color, tortoise):
 #############################
 
 
-def initialize(grid):
+def initialize(grid, rows, columns):
+    '''
+    Set the center square of the 2d array 'grid' as filled.
+    Return a map containing all of the empty squares where key is a tuple
+    with the coords of said square and value is True (value is arbitrary
+    and not used)
+    '''
 
-    r = int(Rows/2 )
-    c = int(Columns/2 )
+    r = int(rows/2 )
+    c = int(columns/2 )
 
     grid[r][c] = FILLED
     
     empty = {}
     
-    for row in range(Rows):
-        for col in range(Columns):
+    for row in range(rows):
+        for col in range(columns):
             if (row, col) != (r,c):
                 empty[(row, col)] = True
 
@@ -95,6 +103,9 @@ def neighborhood(grid, row, column):
                (1, -1), (1, 0), (1, 1)]
 
     count = 0
+
+    Rows = len(grid)
+    Columns = len(grid[0])
     
     for offset in offsets:
         r = row + offset[0]
@@ -105,7 +116,7 @@ def neighborhood(grid, row, column):
 
     return count
 
-def randomMovement(pos):
+def randomMovement(pos, Rows, Columns):
     # for anywhere besides edges (including corners)
     # 1 is NORTH
     # 2 is NORTHEAST
@@ -256,9 +267,9 @@ def getSpawnOptions(empty, radius):
     return spawnOptions
 
    
-def DLA(rows, columns, moveLimit, radius, particles):
+def DLA(rows, columns, moveLimit, particles):
     grid = emptyGrid(rows, columns)
-    empty = initialize(grid)
+    empty = initialize(grid, rows, columns)
 
     numParts = particles
     numUnstuck = 1
@@ -283,11 +294,11 @@ def DLA(rows, columns, moveLimit, radius, particles):
         counter = 0
   
         while not stuck and counter < moveLimit:
-            newR, newC = randomMovement((R, C))
+            newR, newC = randomMovement((R, C), rows, columns)
             # it's possible that random movement tells us to move to a squat that isn't empty
             # loop until we've got a square that is
             while (newR, newC) not in ELIST:
-                newR, newC = randomMovement((R, C))
+                newR, newC = randomMovement((R, C), rows, columns)
                 tempCounter += 1
 
             newGrid[R][C] = EMPTY # the particle used to be at this spot
@@ -332,27 +343,60 @@ def fillGrid(tortoise, grid):
                 drawCircle((r,c), 'blue', tortoise)
             else:
                 drawCircle((r,c), 'white', tortoise)
+
+def writeToFile(grid, fileName):
+
+    with open(fileName, 'w') as f:
+        for row in grid:
+            for thing in row:
+                f.write(str(thing))
+            f.write("\n")
+
+    
+def readFromFile(fileName):
+    grid = []
+    with open(fileName, 'r') as f:
+        for line in f:
+            row = []
+            for letter in line.strip():
+                row.append(int(letter))
+            grid.append(row)
+
+    return grid
     
 def main():
-    numParticles = int(input("How many particles would you like for the simulation?: ").strip())
-    moveLimit = int(input("What movelimit would you like?: ").strip())
 
-    if moveLimit < Rows / 2 + 25:
-        print("That's a pretty small move limit! When the radius gets big particles might have trouble finding a sticking point...")
-        ans = input("Are you sure you want to run? (y/n): ").strip()
-        if ans != 'y':
-            print("Quitting Simulation. . .")
-            exit(0)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-p", "--particles", help="the number of particles you'd like to run the simulation with", type=int, default=500)
+    parser.add_argument("-m", "--movelimit", help="a spawned particle will take up to this many moves without sticking before it dies", type=int, default=2000)
+    parser.add_argument("-r", "--rows", help="the number of rows in the simulation grid", type=int, default=200)
+    parser.add_argument("-c", "--columns", help="the number of columns in the simulation grid", type=int, default=200)
+    parser.add_argument("-f", "--file", help="read the grid in from this file, and display it. No simulation will be run.", type=str)
+    parser.add_argument("-o", "--outfile", help="if running a simulaton, grid will be serialized into this file so you can view it again later", type=str)
+    parser.add_argument("-s", "--scale", help="pixel scale of each square that's drawn. You may need to adjust this depending on number of rows/columns", type=int, default=8)
+    args = parser.parse_args()
 
-    print("---- Starting DLA simulation with %s particles ----"%(numParticles))
-    radius = 5
-    start_time = time.time()
-    grid = DLA(Rows, Columns, moveLimit, radius, numParticles)
-    end_time = time.time()
-    print("Simulation for: %s particles with move limit: %s took %s seconds"%(numParticles, moveLimit, int(end_time - start_time)))
+    Rows    = args.rows
+    Columns = args.columns
 
+    if args.file is not None:
+        # user specified a file. We read the grid in from there
+        grid = readFromFile(args.file)
+    else:
+        # run the simulation
+        numParticles = args.particles
+        moveLimit    = args.movelimit
+        outFile      = args.outfile
+        print("---- Starting DLA simulation with %s particles ----"%(numParticles))
+        start_time = time.time()
+        grid = DLA(Rows, Columns, moveLimit, numParticles)
+        end_time = time.time()
+        print("Simulation for: %s particles with move limit: %s took %s seconds"%(numParticles, moveLimit, int(end_time - start_time)))
 
-    scale = 6 #int(input("Screen scale?: "))
+        print("Writing grid out to file: %s"%(outFile))
+        writeToFile(grid, outFile)
+
+    scale = 8 #int(input("Screen scale?: "))
     george = turtle.Turtle()
     screen = george.getscreen()
     screen.setup(Columns * scale + 20, Rows * scale + 20) # page 707
