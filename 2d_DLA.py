@@ -2,6 +2,8 @@ import turtle ## for drawing
 import random ## for random walk
 import math ## distance formula (square root)
 import copy ##copying lists so they won't be bound together
+import time
+import sys
 
 EMPTY = 0
 FILLED = 1
@@ -113,7 +115,6 @@ def randomMovement(pos):
     # 6 is SOUTHWEST
     # 7 is WEST
     # 8 is NORTHWEST
-##    direction = random.randrange(1,9)
     
     row, col = pos
 
@@ -252,22 +253,21 @@ def getSpawnOptions(empty, radius):
         if distance(item) == (radius + 1):
             spawnOptions[item] = True
 
-    # TODO: try spawning particles at any random spot on the grid and setting the move limit high
-
     return spawnOptions
 
    
 def DLA(rows, columns, moveLimit, radius, particles):
     grid = emptyGrid(rows, columns)
     empty = initialize(grid)
+
     numParts = particles
-    
     numUnstuck = 1
+    partsToIncreaseRadius = 5
+    movesToStickList = [] #TODO: graph this at the end
     while numParts > 0:
-        spawnOptions = getSpawnOptions(empty, radius) # list of pts that's radius distance from the center
         newGrid = copy.deepcopy(grid)
         ELIST = empty
-        startR, startC = random.choice(list(spawnOptions.keys()))
+        startR, startC = random.choice(list(ELIST.keys()))
         newGrid[startR][startC] = FILLED
 
         R = startR
@@ -281,9 +281,9 @@ def DLA(rows, columns, moveLimit, radius, particles):
             newGrid[R][C] = EMPTY # the particle used to be at this spot
             newGrid[newR][newC] = FILLED # the particle moved to this spot
 
-            count = neighborhood(grid, newR, newC)
+            numNeighbors = neighborhood(grid, newR, newC)
                 
-            if count > 0:
+            if numNeighbors > 0:
                 stuck = True
 
                 if (newR, newC) not in list(ELIST.keys()):
@@ -291,14 +291,12 @@ def DLA(rows, columns, moveLimit, radius, particles):
                 else:
                     del ELIST[(newR, newC)]
                     ELIST[(R, C)] = True
-                    if distance((newR, newC)) > radius and radius + 1 < Rows // 2:
-                        radius += 1
-                        # TODO: add less and less to the radius as more particles stick
-                        # this should reduce the amount of straight strands that appear
-                        # could also spawn particles at any random spot in the grid...
-                        
                     numParts -= 1 
-                    print("Particle stuck in %s moves. Radius is %s. Particles remaining = %s"%(counter, radius, numParts))
+
+                    movesToStickList.append(counter)
+
+                    sys.stdout.write("Particles remaining = %d      \r"%(numParts))
+                    sys.stdout.flush()
                     
             R, C = newR, newC # new point becomes the current point
             grid = newGrid
@@ -306,8 +304,7 @@ def DLA(rows, columns, moveLimit, radius, particles):
             empty = ELIST
 
         if not stuck:
-            # the loop has finished. So we know we reached the move limit. Spawn another point
-            print("- - - Unstuck particle #%s"%(numUnstuck))
+            #print("- - - Unstuck particle #%s. %s remain"%(numUnstuck, numParts))
             numUnstuck += 1
             newGrid[R][C] = EMPTY
             ELIST[(R, C)] = True
@@ -338,11 +335,14 @@ def main():
             exit(0)
 
     print("---- Starting DLA simulation with %s particles ----"%(numParticles))
-    radius = 0
+    radius = 5
+    start_time = time.time()
     grid = DLA(Rows, Columns, moveLimit, radius, numParticles)
-    print("---- DLA simulation completed... Drawing grid ----")
+    end_time = time.time()
+    print("Simulation for: %s particles with move limit: %s took %s seconds"%(numParticles, moveLimit, int(end_time - start_time)))
 
-    scale = int(input("Screen scale?: "))
+
+    scale = 6 #int(input("Screen scale?: "))
     george = turtle.Turtle()
     screen = george.getscreen()
     screen.setup(Columns * scale + 20, Rows * scale + 20) # page 707
@@ -355,6 +355,7 @@ def main():
     fillGrid(george, grid)
 
     screen.update()
+
     x = input("Press any button to quit . . .")
     
 main()
