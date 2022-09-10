@@ -5,7 +5,6 @@ import copy ##copying lists so they won't be bound together
 
 EMPTY = 0
 FILLED = 1
-SCALE = 3 ## width of boxes
 
 Rows = 200
 Columns = 200
@@ -48,9 +47,9 @@ def emptyGrid(rows, columns):
         grid.append(row)
     return grid
 
-def createCircles(screen, colors):
+def createCircles(screen, colors, scale):
 
-    square = ((0, 0), (0, SCALE), (SCALE, SCALE), (SCALE, 0))
+    square = ((0, 0), (0, scale), (scale, scale), (scale, 0))
     for color in colors:
         squareShape = turtle.Shape('compound')
         squareShape.addcomponent(square, color, 'lightblue')
@@ -243,32 +242,32 @@ def distance(pos):
     
     return dist
 
-def rPlusOne(empty, radius):
+def getSpawnOptions(empty, radius):
     '''
     Return a dictionary of points that are (radius + 1) from the center
     '''
-    newEmptyList = {}
+    spawnOptions = {}
 
     for item in empty:
         if distance(item) == (radius + 1):
-            newEmptyList[item] = True
+            spawnOptions[item] = True
 
     # TODO: try spawning particles at any random spot on the grid and setting the move limit high
 
-    return newEmptyList
+    return spawnOptions
 
    
 def DLA(rows, columns, moveLimit, radius, particles):
     grid = emptyGrid(rows, columns)
-    emptyList = initialize(grid)
+    empty = initialize(grid)
     numParts = particles
     
     numUnstuck = 1
     while numParts > 0:
-        newEmptyList = rPlusOne(emptyList, radius) # list of pts that's radius distance from the center
+        spawnOptions = getSpawnOptions(empty, radius) # list of pts that's radius distance from the center
         newGrid = copy.deepcopy(grid)
-        ELIST = emptyList
-        startR, startC = random.choice(list(newEmptyList.keys()))
+        ELIST = empty
+        startR, startC = random.choice(list(spawnOptions.keys()))
         newGrid[startR][startC] = FILLED
 
         R = startR
@@ -304,7 +303,7 @@ def DLA(rows, columns, moveLimit, radius, particles):
             R, C = newR, newC # new point becomes the current point
             grid = newGrid
             counter += 1 
-            emptyList = ELIST
+            empty = ELIST
 
         if not stuck:
             # the loop has finished. So we know we reached the move limit. Spawn another point
@@ -328,21 +327,29 @@ def fillGrid(tortoise, grid):
                 drawCircle((r,c), 'white', tortoise)
     
 def main():
-    moveLimit = 100
     numParticles = int(input("How many particles would you like for the simulation?: ").strip())
     moveLimit = int(input("What movelimit would you like?: ").strip())
 
+    if moveLimit < Rows / 2 + 25:
+        print("That's a pretty small move limit! When the radius gets big particles might have trouble finding a sticking point...")
+        ans = input("Are you sure you want to run? (y/n): ").strip()
+        if ans != 'y':
+            print("Quitting Simulation. . .")
+            exit(0)
+
     print("---- Starting DLA simulation with %s particles ----"%(numParticles))
-    grid = DLA(Rows, Columns, moveLimit, 0, numParticles)
+    radius = 0
+    grid = DLA(Rows, Columns, moveLimit, radius, numParticles)
     print("---- DLA simulation completed... Drawing grid ----")
 
+    scale = int(input("Screen scale?: "))
     george = turtle.Turtle()
     screen = george.getscreen()
-    screen.setup(Columns * SCALE + 20, Rows * SCALE + 20) # page 707
+    screen.setup(Columns * scale + 20, Rows * scale + 20) # page 707
     screen.setworldcoordinates(0, 0, Columns, Rows)
     screen.tracer(100)
     george.hideturtle()
-    createCircles(screen, ['blue', 'white'])
+    createCircles(screen, ['blue', 'white'], scale)
 
     drawGrid(Rows, Columns, george)
     fillGrid(george, grid)
