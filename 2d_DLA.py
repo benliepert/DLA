@@ -1,10 +1,3 @@
-## could check position to determine whether or not the moving particle would
-## stick by saving all previous locations in a list
-## if [current position] in list, current position = that particles position
-## end the loop, do it for another particle
-## run the loop a bunch of times
-
-
 import turtle ## for drawing
 import random ## for random walk
 import math ## distance formula (square root)
@@ -84,16 +77,14 @@ def initialize(grid):
 
     grid[r][c] = FILLED
     
-    # emptyList = []
-    emptyList = {}
+    empty = {}
     
     for row in range(Rows):
         for col in range(Columns):
             if (row, col) != (r,c):
-                # emptyList.append((row, col))
-                emptyList[(row, col)] = True
+                empty[(row, col)] = True
 
-    return emptyList
+    return empty
 
 
 def neighborhood(grid, row, column):
@@ -237,22 +228,7 @@ def randomMovement(pos):
         elif direction == 8:
             newPos = (row-1, col-1)
 
-
-
     return newPos
-
-##def addParticle():
-##    
-##    for coordinate in emptyList:
-##        
-##
-##    return startingPos
-    
-
-## count needs to be > 0 to stick
-## if neighborhood(grid, r, c) > 0
-##     stick
-##     append coordinates to "stuck" list
 
 def distance(pos):
     r = int(Rows/2 )
@@ -267,14 +243,17 @@ def distance(pos):
     
     return dist
 
-def rPlusOne(emptyList, radius):
-    # newEmptyList = []
+def rPlusOne(empty, radius):
+    '''
+    Return a dictionary of points that are (radius + 1) from the center
+    '''
     newEmptyList = {}
 
-    for item in emptyList:
+    for item in empty:
         if distance(item) == (radius + 1):
-            # newEmptyList.append(item)
             newEmptyList[item] = True
+
+    # TODO: try spawning particles at any random spot on the grid and setting the move limit high
 
     return newEmptyList
 
@@ -284,15 +263,12 @@ def DLA(rows, columns, moveLimit, radius, particles):
     emptyList = initialize(grid)
     numParts = particles
     
+    numUnstuck = 1
     while numParts > 0:
-        newEmptyList = rPlusOne(emptyList, radius)
+        newEmptyList = rPlusOne(emptyList, radius) # list of pts that's radius distance from the center
         newGrid = copy.deepcopy(grid)
-        # ELIST = copy.deepcopy(emptyList)
-        ELIST = emptyList #copy.deepcopy(emptyList)
-        #########################################
+        ELIST = emptyList
         startR, startC = random.choice(list(newEmptyList.keys()))
-        print("Random point spawned at (%s, %s)"%(startR, startC))
-        #########################################
         newGrid[startR][startC] = FILLED
 
         R = startR
@@ -300,17 +276,13 @@ def DLA(rows, columns, moveLimit, radius, particles):
         stuck = False
 
         counter = 0
-        ZZZ = 0
   
         while not stuck and counter < moveLimit:
             newR, newC = randomMovement((R, C))
-            
-            newGrid[R][C] = EMPTY
-            
-            newGrid[newR][newC] = FILLED
+            newGrid[R][C] = EMPTY # the particle used to be at this spot
+            newGrid[newR][newC] = FILLED # the particle moved to this spot
 
             count = neighborhood(grid, newR, newC)
-            b = False
                 
             if count > 0:
                 stuck = True
@@ -318,25 +290,26 @@ def DLA(rows, columns, moveLimit, radius, particles):
                 if (newR, newC) not in list(ELIST.keys()):
                     break
                 else:
-                    #ELIST.remove((newR, newC))
                     del ELIST[(newR, newC)]
-                    #ELIST.append((R, C))                
                     ELIST[(R, C)] = True
-                    if distance((newR, newC)) > radius and ZZZ % 2 == 0 and radius + 1 < Rows // 2:
-                        radius = radius + 1
-                        ZZZ += 1
+                    if distance((newR, newC)) > radius and radius + 1 < Rows // 2:
+                        radius += 1
+                        # TODO: add less and less to the radius as more particles stick
+                        # this should reduce the amount of straight strands that appear
+                        # could also spawn particles at any random spot in the grid...
                         
-                    numParts = numParts - 1
-                    print("Particle stuck. Radius is %s. Particles remaining = %s"%(radius, numParts))
+                    numParts -= 1 
+                    print("Particle stuck in %s moves. Radius is %s. Particles remaining = %s"%(counter, radius, numParts))
                     
-            R = newR
-            C = newC
-
+            R, C = newR, newC # new point becomes the current point
             grid = newGrid
-            counter = counter + 1
+            counter += 1 
             emptyList = ELIST
 
         if not stuck:
+            # the loop has finished. So we know we reached the move limit. Spawn another point
+            print("- - - Unstuck particle #%s"%(numUnstuck))
+            numUnstuck += 1
             newGrid[R][C] = EMPTY
             ELIST[(R, C)] = True
 
@@ -357,6 +330,7 @@ def fillGrid(tortoise, grid):
 def main():
     moveLimit = 100
     numParticles = int(input("How many particles would you like for the simulation?: ").strip())
+    moveLimit = int(input("What movelimit would you like?: ").strip())
 
     print("---- Starting DLA simulation with %s particles ----"%(numParticles))
     grid = DLA(Rows, Columns, moveLimit, 0, numParticles)
