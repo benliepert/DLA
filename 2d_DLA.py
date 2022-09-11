@@ -267,8 +267,7 @@ def getSpawnOptions(empty, radius):
     return spawnOptions
 
    
-def DLA(rows, columns, moveLimit, particles):
-    grid = emptyGrid(rows, columns)
+def DLA(grid, rows, columns, moveLimit, particles):
     empty = initialize(grid, rows, columns)
 
     numParts = particles
@@ -374,9 +373,11 @@ def main():
     parser.add_argument("-f", "--file", help="read the grid in from this file, and display it. No simulation will be run.", type=str)
     parser.add_argument("-o", "--outfile", help="if running a simulaton, grid will be serialized into this file so you can view it again later", type=str)
     parser.add_argument("-s", "--scale", help="pixel scale of each square that's drawn. You may need to adjust this depending on number of rows/columns", type=int, default=8)
+    parser.add_argument("-g", "--grow", help="continue generating on top of this grid", type=str)
     args = parser.parse_args()
 
     # TODO: add the ability to keep generating on top of a given file
+    # TODO: make program infer size of grid you passed in and use those dimensions
 
     Rows    = args.rows
     Columns = args.columns
@@ -389,15 +390,23 @@ def main():
         # run the simulation
         numParticles = args.particles
         moveLimit    = args.movelimit
-        outFile      = args.outfile
+
+        # either init with an emptygrid, or one we'd like to grow
+        if args.grow is not None:
+            grid = readFromFile(args.grow)
+        else:
+            grid = emptyGrid(rows, columns)
+
         print("---- Starting DLA simulation with %s particles ----"%(numParticles))
         start_time = time.time()
-        grid = DLA(Rows, Columns, moveLimit, numParticles)
+        grid = DLA(grid, Rows, Columns, moveLimit, numParticles)
         end_time = time.time()
         print("Simulation for: %s particles with move limit: %s took %s seconds"%(numParticles, moveLimit, int(end_time - start_time)))
 
-        print("Writing grid out to file: %s"%(outFile))
-        writeToFile(grid, outFile)
+        if args.outfile is not None:
+            outFile = args.outfile
+            print("Writing grid out to file: %s"%(outFile))
+            writeToFile(grid, outFile)
 
     george = turtle.Turtle()
     screen = george.getscreen()
