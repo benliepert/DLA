@@ -6,21 +6,22 @@ import random
 import math
 import copy
 import numpy
+import time
 
 ## global variables, should be odd numbers
+SIZE = 71
 
-Xlength = 71
-Yheight = 71
-Zwidth = 71
+Xlength = SIZE
+Yheight = SIZE
+Zwidth = SIZE
+
 EMPTY = 0
 FILLED = 1
 
 def randomMovement(position):
-
     (X, Y, Z) = position
 
     ## cases include: 8 corners, 6 sides, 12 edges + everywhere else
-
 ############CORNERS################################################
 
     if X == 0 and Y == 0 and Z ==0: # back top left corner
@@ -773,15 +774,17 @@ def randomMovement(position):
             newPos = (X+1, Y, Z+1)
         elif ran == 26:
             newPos = (X+1, Y+1, Z+1)
-
     return newPos
 
-def drawSphere(positon):
+def drawSphere(position):
     ## position is an (x, y, z) coordinate
 
     vp.sphere(pos = position, radius = 1, color = vp.color.blue)
     
 def emptySpace(Xlength, Yheight, Zwidth):
+    '''
+    Initialize a 3d array representing our space. The center point is occupied
+    '''
 
     space = [[[EMPTY for row in range(Xlength)]for col in range(Yheight)\
              ]for Z in range(Zwidth)]
@@ -789,32 +792,25 @@ def emptySpace(Xlength, Yheight, Zwidth):
     X = int(Xlength/2)
     Y = int(Yheight/2)
     Z = int(Zwidth/2)
+
+    space[X][Y][Z] = FILLED
     
-    for x in range(len(space)):
-        for y in range(len(space[x])):
-            for z in range(len(space[x][y])):
-                if (X,Y,Z) == (x,y,z):
-                    space[x][y][z] = FILLED
-                
-            
     return space
 
 def initialize(space):
-    emptyList = []
+    emptyList = {}
     
     X = int(Xlength/2)
     Y = int(Yheight/2)
     Z = int(Zwidth/2)
 
-    sphere = vp.sphere(pos = (X,Y,Z), radius = 1, color = vp.color.blue)
-   
+    #sphere = vp.sphere(pos = vector(X,Y,Z), radius = 1, color = vp.color.blue)
     
     for x in range(len(space)):
         for y in range(len(space[x])):
             for z in range(len(space[x][y])):
                 if (x,y,z) != (X,Y,Z):
-                    emptyList.append((x,y,z))
-                    
+                    emptyList[(x,y,z)] = True
 
     return emptyList
 
@@ -889,14 +885,12 @@ def DLA(Xlength, Yheight, Zwidth, moveLimit, radius, particles):
     space = emptySpace(Xlength, Yheight, Zwidth)
     emptyList = initialize(space)
     numParts = particles
-        
+
     while numParts > 0:
-        newEList = rPlusOne(emptyList, radius)
         newSpace = copy.deepcopy(space)
-        ELIST = copy.deepcopy(emptyList)
-        (startX, startY, startZ) = random.choice(newEList)
+        ELIST = emptyList
+        (startX, startY, startZ) = random.choice(list(ELIST.keys()))
         newSpace[startX][startY][startZ] = FILLED
-        sphere = vp.sphere(pos = (startX,startY,startZ), radius = 1, color = vp.color.blue)
 
         XC = startX
         YC = startY
@@ -906,47 +900,47 @@ def DLA(Xlength, Yheight, Zwidth, moveLimit, radius, particles):
         counter = 0
 
         while (not stuck) and (counter < moveLimit):
-            vp.rate()
             (newX, newY, newZ) = randomMovement((XC, YC, ZC))
+            while (newX, newY, newZ) not in ELIST:
+                (newX, newY, newZ) = randomMovement((XC, YC, ZC))
+
             newSpace[XC][YC][ZC] = EMPTY
             newSpace[newX][newY][newZ] = FILLED
-            sphere.pos = (newX, newY, newZ)
             count = neighborhood(newSpace, (newX,newY,newZ))
 
             if count > 0:
                 stuck = True
+                print("Particle stuck! %s remain."%(numParts))
+                del ELIST[(newX, newY, newZ)] 
+                ELIST[(XC,YC,ZC)] = True
 
-                if (newX,newY,newZ) not in ELIST:
-                    print('broken')
-                    break
-                else:
-                    ELIST.remove((newX, newY, newZ))
-                    ELIST.append((XC, YC, ZC))
-
-                    if distance((newX, newY, newZ)) > radius:
-                        radius = radius + 1
-
-                    numParts = numParts - 1
+                numParts -= 1
 
             XC = newX
             YC = newY
             ZC = newZ
 
             space = newSpace
-            counter = counter + 1
+            counter += 1
             emptyList = ELIST
-            
 
         if not stuck:
+            print("Particle didn't stick after %s moves."%(moveLimit))
             space[XC][YC][ZC] = EMPTY
-            emptyList.append((XC, YC, ZC))
-            sphere.visible = False
+            emptyList[(XC, YC, ZC)] = True
     
     return space
 
              
 def main():
-    DLA(Xlength, Yheight, Zwidth, 200, 0, 5)
+    print("Starting simulation...")
+
+    movelimit = 100000
+    radius = 0
+    particles = 25
+    space = DLA(Xlength, Yheight, Zwidth, movelimit, radius, particles)
+
+    x = input("Press enter to quit. . .")
     
 main()
 
