@@ -376,8 +376,11 @@ def main():
     parser.add_argument("-s", "--scale", help="pixel scale of each square that's drawn. You may need to adjust this depending on number of rows/columns", type=int, default=8)
     args = parser.parse_args()
 
+    # TODO: add the ability to keep generating on top of a given file
+
     Rows    = args.rows
     Columns = args.columns
+    scale   = args.scale
 
     if args.file is not None:
         # user specified a file. We read the grid in from there
@@ -396,7 +399,6 @@ def main():
         print("Writing grid out to file: %s"%(outFile))
         writeToFile(grid, outFile)
 
-    scale = 8
     george = turtle.Turtle()
     screen = george.getscreen()
     screen.setup(Columns * scale + 20, Rows * scale + 20) # page 707
