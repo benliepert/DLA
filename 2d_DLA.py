@@ -10,12 +10,7 @@ import argparse
 EMPTY = 0
 FILLED = 1
 
-#Rows = 200
-#Columns = 200
-
-
 ## currently all circle related functions draw squares instead
-
 def drawGrid(rows, columns, tortoise):
     """Draws an empty grid using turtle graphics.
     Parameters: 
@@ -71,7 +66,6 @@ def drawCircle(pos, color, tortoise):
     tortoise.stamp()
     
 #############################
-
 
 def initialize(grid, rows, columns):
     '''
@@ -376,7 +370,6 @@ def main():
     parser.add_argument("-g", "--grow", help="continue generating on top of this grid", type=str)
     args = parser.parse_args()
 
-    # TODO: add the ability to keep generating on top of a given file
     # TODO: make program infer size of grid you passed in and use those dimensions
 
     Rows    = args.rows
