@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/env python3
 import turtle ## for drawing
 import random ## for random walk
 import math ## distance formula (square root)
@@ -388,7 +388,7 @@ def main():
         if args.grow is not None:
             grid = readFromFile(args.grow)
         else:
-            grid = emptyGrid(rows, columns)
+            grid = emptyGrid(Rows, Columns)
 
         print("---- Starting DLA simulation with %s particles ----"%(numParticles))
         start_time = time.time()
