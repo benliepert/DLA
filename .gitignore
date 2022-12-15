@@ -1,3 +1,2 @@
-
+# prevent pushing mac artifact 
 .DS_Store
-outfile
